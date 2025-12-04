@@ -1,0 +1,337 @@
+---
+title: "Cyclistic Bike-Share Case Study"
+author: "Vaishali"
+date: "2025-11-26"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    theme: flatly
+    highlight: tango
+    fig_width: 8
+    fig_height: 5
+    code_folding: hide
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 1. Loading Libraries
+
+We begin by loading the core libraries needed for data cleaning, transformation, and visualization.
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(lubridate)
+```
+
+------------------------------------------------------------------------
+
+# 2. Importing and Cleaning Raw Datasets
+
+The 2019 and 2020 Q1 Divvy trip files are loaded and cleaned.\
+`clean_names()` standardizes all column names to snake_case for easier handling.
+
+```{r}
+trips_2019 <- read_csv("Divvy_Trips_2019_Q1.csv") %>% clean_names()
+trips_2020 <- read_csv("Divvy_Trips_2020_Q1.csv") %>% clean_names()
+```
+
+------------------------------------------------------------------------
+
+# 3. Renaming Columns for Consistency
+
+Since the two datasets use different naming conventions, we align column names so they are compatible for merging.
+
+```{r}
+trips_2019 <- trips_2019 %>% 
+  rename(
+    start_station_id   = from_station_id,
+    start_station_name = from_station_name,
+    end_station_id     = to_station_id,
+    end_station_name   = to_station_name,
+    member_type        = usertype
+  )
+
+trips_2020 <- trips_2020 %>% 
+  rename(
+    trip_id        = ride_id,
+    start_time     = started_at,
+    end_time       = ended_at,
+    member_type    = member_casual
+  )
+```
+
+------------------------------------------------------------------------
+
+# 4. Keeping Only Common Columns
+
+To safely combine both datasets, we identify column names that exist in **both** tables.
+
+```{r}
+common_cols <- intersect(names(trips_2019), names(trips_2020))
+
+trips_2019_common <- trips_2019 %>% select(all_of(common_cols))
+trips_2020_common <- trips_2020 %>% select(all_of(common_cols))
+```
+
+------------------------------------------------------------------------
+
+# 5. Parsing and Converting Columns
+
+We convert timestamps to proper datetime format and ensure `trip_id` has the same type across datasets.
+
+```{r}
+trips_2019_common <- trips_2019_common %>%
+  mutate(
+    trip_id    = as.character(trip_id),
+    start_time = ymd_hms(start_time, tz="Asia/Kolkata"),
+    end_time   = ymd_hms(end_time, tz="Asia/Kolkata")
+  )
+
+trips_2020_common <- trips_2020_common %>%
+  mutate(
+    start_time = ymd_hms(start_time, tz="Asia/Kolkata"),
+    end_time   = ymd_hms(end_time, tz="Asia/Kolkata")
+  )
+```
+
+------------------------------------------------------------------------
+
+# 6. Combining the Datasets
+
+Now that the structures match, we bind the two datasets into one master table.
+
+```{r}
+all_trips <- bind_rows(trips_2019_common, trips_2020_common)
+```
+
+------------------------------------------------------------------------
+
+# 7. Creating New Date & Time Variables
+
+We engineer new features such as ride duration, weekday, hour of ride, and season.
+
+```{r}
+all_trips <- all_trips %>%
+  mutate(
+    ride_length_mins = round(as.numeric(difftime(end_time,start_time,units="mins")),2),
+    day_of_week      = weekdays(start_time),
+    start_hour       = as.numeric(format(start_time,"%H")),
+    is_weekend       = weekdays(start_time) %in% c("Saturday","Sunday"),
+    day              = as.numeric(format(start_time, "%d")),
+    month            = as.numeric(format(start_time, "%m")),
+    year             = as.numeric(format(start_time, "%Y")),
+    ride_season      = case_when(
+      month %in% c(12,1,2)  ~ "Winter",
+      month %in% c(3,4,5)   ~ "Spring",
+      month %in% c(6,7,8)   ~ "Summer",
+      month %in% c(9,10,11) ~ "Fall"
+    )
+  )
+```
+
+------------------------------------------------------------------------
+
+# 8. Cleaning the Final Dataset
+
+We remove invalid trips, fix inconsistent member labels, and drop duplicates.
+
+```{r}
+all_trips <- all_trips %>%
+  drop_na(trip_id,start_time,start_station_name,end_time,end_station_name) %>%
+  filter(ride_length_mins > 0 & ride_length_mins <= 24*60) %>%
+  filter(end_time >= start_time) %>%
+  mutate(
+    member_type = case_when(
+      member_type %in% c("member","Member","Subscriber","subscriber") ~ "member",
+      member_type %in% c("casual","Casual","Customer","customer")     ~ "casual",
+      TRUE ~ member_type
+    )
+  ) %>%
+  distinct(trip_id, .keep_all = TRUE)
+
+all_trips_v2 <- all_trips[
+  !(all_trips$start_station_name=="HQ QR" | all_trips$ride_length_mins<0),]
+```
+
+------------------------------------------------------------------------
+
+# 9. Summary Statistics
+
+Basic summary of trip durations.
+
+```{r}
+summary(all_trips_v2$ride_length_mins)
+```
+
+------------------------------------------------------------------------
+
+# 10. Comparing Members vs Casual Riders
+
+We compare mean, median, max, and min ride durations.
+
+```{r}
+aggregate(ride_length_mins ~ member_type, data=all_trips_v2, FUN=mean)
+aggregate(ride_length_mins ~ member_type, data=all_trips_v2, FUN=median)
+aggregate(ride_length_mins ~ member_type, data=all_trips_v2, FUN=max)
+aggregate(ride_length_mins ~ member_type, data=all_trips_v2, FUN=min)
+```
+
+------------------------------------------------------------------------
+
+# 11. Weekend Ride Percentages
+
+Calculating the share of rides that occur on weekends.
+
+```{r}
+weekend_percentage <- all_trips_v2 %>%
+  group_by(member_type) %>%
+  summarise(
+    total = n(),
+    weekend = sum(is_weekend=="TRUE"),
+    weekend_pct = round(weekend/total * 100, 2)
+  )
+```
+
+------------------------------------------------------------------------
+
+# 12. Ride Duration by Weekday and Member Type
+
+Average duration grouped and sorted by weekday.
+
+```{r}
+aggregate(ride_length_mins ~ member_type + day_of_week,
+data = all_trips_v2, FUN = mean)
+all_trips_v2$day_of_week <- ordered(all_trips_v2$day_of_week, levels=c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"))
+
+```
+
+------------------------------------------------------------------------
+
+# 13. Hourly Ride Distribution Visualization
+
+We visualize how rides vary across different hours of the day.
+
+```{r}
+hourly_counts <- all_trips_v2 %>%
+  group_by(member_type, start_hour) %>%
+  summarise(number_of_rides=n()) %>%
+  arrange(member_type, start_hour)
+
+hourly_counts %>%
+  ggplot(aes(x=start_hour,y=number_of_rides,color=member_type)) +
+  geom_line(linewidth=1) +
+  labs(title="Hourly Ride Distribution",
+       x="Hour of Day",
+       y="Number of Rides")
+```
+
+------------------------------------------------------------------------
+
+# 14. Peak Hours: Weekday vs Weekend
+
+Identifying peak hourly activity.
+
+```{r}
+peak_hours <- all_trips_v2 %>%
+  group_by(is_weekend,start_hour) %>%
+  summarise(number_of_rides=n(), .groups="drop")
+
+peak_hours %>%
+  group_by(is_weekend) %>%
+  slice_max(order_by = number_of_rides, n = 1)
+```
+
+Plot:
+
+```{r}
+ggplot(peak_hours, aes(x=start_hour,y=number_of_rides,color=is_weekend)) +
+  geom_line(linewidth=1.1) +
+  labs(title="Peak Riding Periods: Weekdays vs Weekends",
+       x="Hour Of Day", y="Number Of Rides",
+       color="Is Weekend") +
+  scale_x_continuous(breaks = 0:23)
+```
+
+------------------------------------------------------------------------
+
+# 15. Seasonality Analysis
+
+Total rides per month.
+
+```{r}
+monthly_counts <- all_trips_v2 %>%
+  mutate(month_labels = month(month, label=TRUE)) %>%
+  group_by(month_labels) %>%
+  summarise(number_of_rides=n(), .groups="drop")
+
+ggplot(monthly_counts, aes(x=month_labels, y=number_of_rides, group=1)) +
+  geom_line(size=1.2, color = "steelblue") +
+  geom_point(size=2) +
+  labs(title="Seasonal Ride Patterns by Month",
+       x="Month", y="Number of Rides")
+```
+
+------------------------------------------------------------------------
+
+# 16. Seasonality by Member Type
+
+```{r}
+all_trips_v2 %>%
+  group_by(member_type, month) %>%
+  summarise(number_of_rides=n(), .groups="drop") %>%
+  ggplot(aes(x=month, y=number_of_rides, fill=member_type)) +
+  geom_col(position="dodge") +
+  labs(title="Seasonality by Member Type",
+       x="Month Number", y="Number of Rides")
+```
+
+------------------------------------------------------------------------
+
+# 17. Weekly Ride Distribution Visualization
+
+```{r}
+all_trips_v2 %>%
+  group_by(member_type, day_of_week) %>%
+  summarize(number_of_rides=n()) %>%
+  arrange(member_type,day_of_week) %>%
+  ggplot(aes(x=day_of_week, y=number_of_rides, fill=member_type)) + 
+  geom_col(position="dodge") + 
+  labs(title="Daily Ride Distribution") +
+  theme(axis.text.x = element_text(angle=45))
+```
+
+------------------------------------------------------------------------
+
+# 18. Average Ride Duration Visualization
+
+```{r}
+all_trips_v2 %>%
+  group_by(member_type, day_of_week) %>%
+  summarize(average_duration=mean(ride_length_mins)) %>%
+  arrange(member_type,day_of_week) %>%
+  ggplot(aes(x=day_of_week, y=average_duration, fill=member_type)) + 
+  geom_col(position="dodge") +
+  theme(axis.text.x = element_text(angle=45))
+```
+
+------------------------------------------------------------------------
+
+# 19. Exporting Summary Table
+
+We save a CSV with average ride lengths per member type and weekday.
+
+```{r}
+counts <- aggregate(ride_length_mins ~ member_type + day_of_week,
+                    data=all_trips_v2,
+                    FUN=function(x) round(mean(x),2))
+
+names(counts)[3] <- "average_ride_length_mins"
+
+write_csv(counts, file="average_ride_length_mins.csv")
+```
