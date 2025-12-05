@@ -59,7 +59,8 @@ https://www.kaggle.com/datasets/vaishalichawla01/cyclistic-bike-share-2019q1-202
 
 This project includes charts for:
 
-- Hourly ride distribution  
+- Hourly ride distribution
+- Daily ride distribution
 - Weekday vs. weekend behavior  
 - Ride duration comparison  
 - Seasonal ride patterns  
@@ -67,12 +68,12 @@ This project includes charts for:
 
 
 ```
-![Hourly Ride Distribution](hourly_ride_distribution.png)
-![Average Ride Duration](average_ride_duration.png)
-![Seasonality Analysis](seasonality_analysis.png)
-![Daily Ride Distribution](daily_ride_distribution.png)
-![Peak Riding Hours](peak_riding_hours.png)
-![Seasonal Analysis By Member Type](seasonality_by_member_type.png)
+![Hourly Ride Distribution](img/hourly_ride_distribution.png)
+![Daily Ride Distribution](img/daily_ride_distribution.png)
+![Peak Riding Hours](img/peak_riding_hours.png)
+![Average Ride Duration](img/average_ride_duration.png)
+![Seasonality Analysis](img/seasonality_analysis.png)
+![Seasonal Analysis By Member Type](img/seasonality_by_member_type.png)
 ```
 
 ---
