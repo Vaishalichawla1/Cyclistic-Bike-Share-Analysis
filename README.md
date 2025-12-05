@@ -75,16 +75,17 @@ This project includes charts for:
 ## Links
 
 ### Kaggle Notebook  
-Your interactive analysis is available here:   
+My interactive analysis is available here:   
 `[https://www.kaggle.com/your-notebook-link](https://www.kaggle.com/code/vaishalichawla01/cyclistic-bike-share-capstone-project)`
 
 ### Full Written Report  
-*Add link to final_report.docx if you upload it to GitHub*  
+[Project Report](https://github.com/Vaishalichawla1/Cyclistic-Bike-Share-Analysis/blob/main/CYCLISTIC%20BIKE-SHARE%20CASE%20STUDY.pdf) 
 
 ### Original Data Source  
-Divvy Data License & Public Dataset:  
-[https://divvy-tripdata.s3.amazonaws.com/index.html
-](https://divvybikes.com/data-license-agreement)
+[Divvy Data License](https://divvybikes.com/data-license-agreement)
+
+[Public Dataset](https://www.kaggle.com/datasets/vaishalichawla01/cyclistic-bike-share-2019q1-2020q1)  
+
 ---
 
 ## How to Reproduce the Analysis
