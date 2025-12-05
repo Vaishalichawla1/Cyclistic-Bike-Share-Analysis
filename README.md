@@ -7,7 +7,7 @@ This project analyzes bike-share usage patterns to understand how casual riders 
 
 ## Project Summary
 
-Using real trip data from the Cyclistic bike-share program, I performed a full end-to-end analysis including:
+Using real trip data from the Cyclistic bike-share program, I performed a full end-to-end analysis, including:
 
 - Cleaning and merging data from multiple years  
 - Engineering time-based features (season, hour, weekday/weekend, etc.)  
@@ -21,7 +21,7 @@ This project strengthens skills in **R programming**, **data wrangling**, **EDA*
 
 ## Tools & Technologies Used
 
-- **R (tidyverse, ggplot2)**  
+- **R (tidyverse, lubridate, ggplot2, janitor)**  
 - **R Markdown** for narrative reporting  
 - **Kaggle Notebooks** for shared, reproducible analysis  
 - **Posit Cloud** for development environment  
@@ -67,7 +67,12 @@ This project includes charts for:
 
 
 ```
-![Hourly Ride Distribution](img/hourly_distribution.png)
+![Hourly Ride Distribution](hourly_ride_distribution.png)
+![Average Ride Duration](average_ride_duration.png)
+![Seasonality Analysis](seasonality_analysis.png)
+![Daily Ride Distribution](daily_ride_distribution.png)
+![Peak Riding Hours](peak_riding_hours.png)
+![Seasonal Analysis By Member Type](seasonality_by_member_type.png)
 ```
 
 ---
