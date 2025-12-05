@@ -33,10 +33,11 @@ This project strengthens skills in **R programming**, **data wrangling**, **EDA*
 
 ```
 cyclistic-bike-share-analysis/
-├── README.md                 <- Overview of the project (this file)
-├── cyclistic_analysis.Rmd    <- Full narrative + code
-├── cyclistic_analysis.html   <- Rendered HTML report 
-├── final_report.docx         <- Written project report
+├── README.md                              <- Overview of the project (this file)
+├── Cyclistic-Bike-Share-Case-Study.Rmd    <- Full narrative + code
+├── Cyclistic-Bike-Share-Case-Study.html   <- Rendered HTML report 
+├── CYCLISTIC BIKE-SHARE CASE STUDY.pdf    <- Written project report
+└── /img                                   <- Plots & visualizations 
 ```
 
  **Note:** The official Divvy/Cyclistic datasets cannot be uploaded due to license restrictions.  
